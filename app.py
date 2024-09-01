@@ -2,6 +2,7 @@ import os
 import requests
 
 from flask import Flask, request
+import github
 from github import Github, GithubIntegration
 from dotenv import load_dotenv
 
@@ -30,11 +31,10 @@ def bot():
     payload = request.json
     
 
-    
+    print(f"Received payload for PR #{payload['pull_request']['number']}")
     # Check if the event is a GitHub PR creation event
-    if not all(k in payload.keys() for k in ['action', 'pull_request']) and \
-            payload['action'] == 'opened':
-        print(True)
+    if not (payload.get('action') == 'opened' and 'pull_request' in payload):
+        print(f"Ignoring event: {payload.get('action', 'unknown')} - not a new PR")
         return "ok"
     print(payload['repository']['owner'])
     owner = payload['repository']['owner']['login']
@@ -52,17 +52,36 @@ def bot():
     )
     repo = git_connection.get_repo(f"{owner}/{repo_name}")
 
-    issue = repo.get_issue(number=payload['pull_request']['number'])
+    try:
+        issue = repo.get_issue(number=payload['pull_request']['number'])
+    except github.GithubException as e:
+        print(f"Error getting issue: {e}")
+        return "Error", 500
 
     # Call meme-api to get a random meme
-    response = requests.get(url='https://meme-api.herokuapp.com/gimme')
-    if response.status_code != 200:
-        return 'ok'
+    try:
+        response = requests.get(url='https://meme-api.herokuapp.com/gimme', timeout=10)
+        response.raise_for_status()
+    except requests.RequestException as e:
+        print(f"Error fetching meme: {e}")
+        return "Error fetching meme", 500
 
     # Get the best resolution meme
-    meme_url = response.json()['preview'][-1]
+    try:
+        meme_url = response.json()['preview'][-1]
+    except (KeyError, IndexError) as e:
+        print(f"Error parsing meme response: {e}")
+        print(f"Response content: {response.text}")
+        return "Error parsing meme response", 500
+
     # Create a comment with the random meme
-    issue.create_comment(f"![Alt Text]({meme_url})")
+    try:
+        comment = issue.create_comment(f"![Meme]({meme_url})")
+        print(f"Comment created: {comment.html_url}")
+    except github.GithubException as e:
+        print(f"Error creating comment: {e}")
+        return "Error creating comment", 500
+
     return "ok"
 
 
