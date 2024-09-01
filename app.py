@@ -62,7 +62,9 @@ def bot():
 
     # Call meme-api to get a random meme
     try:
-        response = requests.get(url='https://meme-api.herokuapp.com/gimme', timeout=10)
+
+        
+        response = requests.get(url='https://meme-api.com/gimme', timeout=10)
         response.raise_for_status()
     except requests.RequestException as e:
         print(f"Error fetching meme: {e}")
