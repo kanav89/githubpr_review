@@ -28,12 +28,15 @@ git_integration = GithubIntegration(
 def bot():
     # Get the event payload
     payload = request.json
+    
 
+    
     # Check if the event is a GitHub PR creation event
     if not all(k in payload.keys() for k in ['action', 'pull_request']) and \
             payload['action'] == 'opened':
+        print(True)
         return "ok"
-
+    print(payload['repository']['owner'])
     owner = payload['repository']['owner']['login']
     repo_name = payload['repository']['name']
 
