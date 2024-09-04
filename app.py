@@ -143,10 +143,12 @@ def bot():
         confirmation_comment += "Do you want to apply these AI-suggested changes? Reply with 'Approve AI changes' to proceed."
         comment = issue.create_comment(confirmation_comment)
         
-        # if wait_for_user_confirmation(issue, comment.id):
-        #     for file, content, all_issues in files_with_issues:
-        #         suggested_fixes = suggest_fixes(content, all_issues)
-        #         fixed_content = apply_fixes(content, suggested_fixes)
+        if wait_for_user_confirmation(issue, comment.id):
+            for file, content, all_issues in files_with_issues:
+                suggested_fixes = suggest_fixes(content, all_issues)
+                fixed_content = apply_fixes(content, suggested_fixes)
+                print(fixed_content)
+
                 
         #         # Create a new branch for the fixes
         #         new_branch = f"ai-fixes-{pull_number}-{file['filename'].replace('/', '-')}"
