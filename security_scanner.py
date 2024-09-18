@@ -1,9 +1,10 @@
 import json
 import subprocess
 import tempfile
+import os
 
 def scan_security(code):
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as temp_file:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as temp_file:
         temp_file.write(code)
         temp_file_path = temp_file.name
 
@@ -20,5 +21,4 @@ def scan_security(code):
         
         return "\n".join(issues)
     finally:
-        import os
         os.unlink(temp_file_path)
