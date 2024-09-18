@@ -97,7 +97,7 @@ def create_and_merge(owner, repo,file_path,file_content):
 
         # Create a new file on the branch
        
-        commit_message = 'Add new feature file'
+        commit_message = 'Add new feature file  '
         try:
             new_file = create_file_on_branch(base_url, new_branch_name, file_path, file_content, commit_message, headers)
             print(f"New file created: {new_file['content']['path']}")
