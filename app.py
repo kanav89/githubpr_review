@@ -176,7 +176,9 @@ def handle_new_comment(payload):
                     
                     with open('app_fixed.py', 'w',encoding='utf-8') as f:
                         f.write(ai_fixed_code)
-                   
+                    # with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.py') as temp_file:
+                    #     temp_file.write(ai_fixed_code)
+                        # fixed_files.append((file['filename'], temp_file.name))
                     print("Fixed code written to file")
                     response = f"```python\n{ai_fixed_code}\n```"
                     response += "Changes applied successfully"
