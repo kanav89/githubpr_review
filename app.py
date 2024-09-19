@@ -186,7 +186,7 @@ def handle_new_comment(payload):
             elif comment_body.lower().strip() == "@style merge changes":
                 for file in files:
                     print(file['filename'])
-                    create_and_merge(owner,repo_name,"bot-code.py",ai_fixed_code)
+                    create_and_merge(owner,repo_name,"bot-code2.py",ai_fixed_code)
                     print("branch created")
                     response = "Changes merged successfully"
             # elif flake8_output==None:
