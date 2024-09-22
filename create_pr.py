@@ -66,19 +66,40 @@ def create_pull_request(base_url, new_branch_name, default_branch, headers, titl
         raise Exception(f"Error creating pull request: {response.status_code}\n{response.json()}")
     return response.json()
 
+def get_file_sha(base_url, branch_name, file_path, headers):
+    get_file_url = f'{base_url}/contents/{file_path}?ref={branch_name}'
+    response = requests.get(get_file_url, headers=headers)
+    if response.status_code == 200:
+        return response.json()['sha']
+    elif response.status_code == 404:
+        return None
+    else:
+        raise Exception(f"Error getting file SHA: {response.status_code}\n{response.json()}")
+
 def create_file_on_branch(base_url, branch_name, file_path, file_content, commit_message, headers):
     create_file_url = f'{base_url}/contents/{file_path}'
+    print("create_file_url", create_file_url)
+    print(f"File content before encoding: {file_content}")
+    
+    # Check if file already exists
+    existing_file_sha = get_file_sha(base_url, branch_name, file_path, headers)
+    
     data = {
         "message": commit_message,
         "content": base64.b64encode(file_content.encode()).decode(),
         "branch": branch_name
     }
+    
+    if existing_file_sha:
+        print("file exists")
+        data["sha"] = existing_file_sha
+    
     response = requests.put(create_file_url, json=data, headers=headers)
-    if response.status_code != 201:
-        raise Exception(f"Error creating file: {response.status_code}\n{response.json()}")
+    if response.status_code not in [200, 201]:
+        raise Exception(f"Error creating/updating file: {response.status_code}\n{response.json()}")
     return response.json()
 
-def create_and_merge(owner, repo,file_path,file_content):
+def create_and_merge(owner, repo, file_path, file_content):
     print("here")
     token = load_github_token()
     headers = create_headers(token)
@@ -94,21 +115,19 @@ def create_and_merge(owner, repo,file_path,file_content):
 
         branch = get_or_create_branch(base_url, new_branch_name, base_sha, headers)
         print(f"Using branch: {branch['ref']}")
+        print("file content", file_content)
 
-        # Create a new file on the branch
-       
-        commit_message = 'Add new feature file  '
+        # Create or update file on the branch
+        commit_message = 'Add or update feature file'
         try:
-            new_file = create_file_on_branch(base_url, new_branch_name, file_path, file_content, commit_message, headers)
-            print(f"New file created: {new_file['content']['path']}")
+            updated_file = create_file_on_branch(base_url, new_branch_name, file_path, file_content, commit_message, headers)
+            print(f"File created/updated: {updated_file['content']['path']}")
         except Exception as e:
-            if "sha" in str(e):
-                print(f"File '{file_path}' already exists. Skipping file creation.")
-            else:
-                raise e
+            print(f"Error creating/updating file: {str(e)}")
+            raise e
 
         pr_title = "New feature implementation"
-        pr_body = "This pull request adds a new feature to our project."
+        pr_body = "This pull request adds or updates a feature in our project."
         try:
             new_pr = create_pull_request(base_url, new_branch_name, default_branch, headers, pr_title, pr_body)
             print(f"New pull request created: {new_pr['html_url']}")
