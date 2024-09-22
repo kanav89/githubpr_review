@@ -67,7 +67,7 @@ Please provide the corrected code."""
             },
             {
                 "role": "user",
-                "content": "Please give corrected code and only remove unused imports"
+                "content": "Please give corrected code and only remove unused imports. Don't give any description or explanation."
             }
         ],
         "max_tokens": 2000,

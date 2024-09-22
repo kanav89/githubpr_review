@@ -8,6 +8,7 @@ from get_pr import get_file_content, get_pr_files
 from flake8_checker import check_flake8
 from ai_fixer import analyze_code_perplexity
 from create_pr import create_and_merge
+
 import tempfile
 
 load_dotenv()
@@ -150,12 +151,12 @@ def handle_new_comment(payload):
                     flake8_output = check_flake8(content)
                     ai_fixed_code += analyze_code_perplexity(content, flake8_output=flake8_output)
                     
-                    with open('app_fixed.py', 'w', encoding='utf-8') as f:
+                    with open(f'app_fixed_{file["filename"]}.py', 'w', encoding='utf-8') as f:
                         f.write(ai_fixed_code)
                     print("Fixed code written to file")
-                    response = f"```python\n{ai_fixed_code}\n```"
-                    response += "Changes applied successfully"
-                    response += "\n\nTo merge these changes reply with '@style Merge Changes'"
+                    response += f"```python\n{ai_fixed_code}\n\n```"
+                response += "Changes applied successfully"
+                response += "\n\nTo merge these changes reply with '@style Merge Changes'"
             elif comment_body.lower().strip() == "@style merge changes":
                 with open('app_fixed.py', 'r', encoding='utf-8') as f:
                         ai_fixed_code = f.read()
