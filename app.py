@@ -93,8 +93,7 @@ def handle_new_pr(payload):
         ).token
     )
     repo = git_connection.get_repo(f"{owner}/{repo_name}")
-    files = get_pr_files(owner, repo_name, pull_number, os.getenv("GITHUB_TOKEN"))
-    # content_list = [get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN")) for file in files]
+    
     
     try:
         issue = repo.get_issue(number=pull_number)
@@ -164,7 +163,7 @@ def handle_new_comment(payload):
                     for file in files:
                         print(file['filename'])
                         create_and_merge(owner, repo_name, file['filename'], ai_fixed_code)
-                        print("branch created")
+                        print(f"Branch created and merged for {file['filename']}")
                     response = "Changes merged successfully"
                 else:
                     response = "No changes to merge. Please run '@style Approve Changes' first."
