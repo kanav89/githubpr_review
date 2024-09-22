@@ -29,18 +29,17 @@ git_integration = GithubIntegration(
 )
 
 def get_perplexity_response(question, pr_files, conversation_history):
-    content = ""
-    for i in conversation_history:
-        content += i
-    content += question
+    # Concatenate all conversation history items and the question into a single string
+    content = " ".join(conversation_history) + question
     url = "https://api.perplexity.ai/chat/completions"
 
+    # Construct the payload for the request
     payload = {
         "model": "llama-3.1-sonar-small-128k-online",
         "messages": [
             {
                 "role": "system",
-                'content': f"Context: {pr_files}\n\nQuestion: {question}"
+                'content': f"Context: {pr_files}\n\nQuestion: {question}\n\nonly give the corrected code without any explanation"
             },
             {
                 "role": "user",
@@ -51,6 +50,7 @@ def get_perplexity_response(question, pr_files, conversation_history):
         "temperature": 0.2,
         
     }
+    # Set the headers for the request
     headers = {
         "Authorization": f"Bearer {perplexity_api_key}",
         "Content-Type": "application/json"
@@ -164,33 +164,31 @@ def handle_new_comment(payload):
             conversation_histories[pull_number].append({'role': 'assistant', 'content': response})
 
     elif comment_body.lower().startswith('@style'):
-        if len(comment_body.split(' '))>1:
-            # approve = comment_body.split(' ', 1)[1]
+        if len(comment_body.split(' ')) > 1:
             response = ""
             if comment_body.lower().strip() == "@style approve changes":
                 for file in files:
                     content = get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN"))
                     flake8_output = check_flake8(content)
-                    ai_fixed_code = analyze_code_perplexity(content,flake8_output=flake8_output)
+                    ai_fixed_code += analyze_code_perplexity(content, flake8_output=flake8_output)
                     
-                    
-                    with open('app_fixed.py', 'w',encoding='utf-8') as f:
+                    with open('app_fixed.py', 'w', encoding='utf-8') as f:
                         f.write(ai_fixed_code)
-                    # with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.py') as temp_file:
-                    #     temp_file.write(ai_fixed_code)
-                        # fixed_files.append((file['filename'], temp_file.name))
                     print("Fixed code written to file")
                     response = f"```python\n{ai_fixed_code}\n```"
                     response += "Changes applied successfully"
                     response += "\n\nTo merge these changes reply with '@style Merge Changes'"
             elif comment_body.lower().strip() == "@style merge changes":
-                for file in files:
-                    print(file['filename'])
-                    create_and_merge(owner,repo_name,"bot-code.py",ai_fixed_code)
-                    print("branch created")
+                with open('app_fixed.py', 'r', encoding='utf-8') as f:
+                        ai_fixed_code = f.read()
+                if ai_fixed_code:
+                    for file in files:
+                        print(file['filename'])
+                        create_and_merge(owner, repo_name, file['filename'], ai_fixed_code)
+                        print("branch created")
                     response = "Changes merged successfully"
-            # elif flake8_output==None:
-            #     response = "Run @style first to apply the changes"
+                else:
+                    response = "No changes to merge. Please run '@style Approve Changes' first."
         else:   
             for file in files:
                 print(file['filename'])
