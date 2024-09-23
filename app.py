@@ -1,3 +1,4 @@
+```python
 import os
 import requests
 from flask import Flask, request
@@ -9,28 +10,27 @@ from flake8_checker import check_flake8
 from ai_fixer import analyze_code_perplexity
 from create_pr import create_and_merge
 
-import tempfile
-
 load_dotenv()
 app = Flask(__name__)
 app_id = os.getenv("APP_ID")
 claude_api_key = os.getenv("ANTHROPIC_API_KEY")
 claude_api_url = "https://api.perplexity.ai/chat/completions"
 perplexity_api_key = os.getenv("PERPLEXITY_API_KEY")
+
 with open(
-        os.path.normpath(os.path.expanduser('./prreviewer.2024-08-31.private-key.pem')),
-        'r'
+    os.path.normpath(os.path.expanduser('./prreviewer.2024-08-31.private-key.pem')),
+    'r'
 ) as cert_file:
     app_key = cert_file.read()
+
 git_integration = GithubIntegration(
     app_id,
-    app_key, 
+    app_key
 )
+
 def get_perplexity_response(question, pr_files, conversation_history):
-    # Concatenate all conversation history items and the question into a single string
     content = " ".join(conversation_history) + question
     url = "https://api.perplexity.ai/chat/completions"
-    # Construct the payload for the request
     payload = {
         "model": "llama-3.1-sonar-small-128k-online",
         "messages": [
@@ -47,15 +47,13 @@ def get_perplexity_response(question, pr_files, conversation_history):
         "temperature": 0.2,
         
     }
-    # Set the headers for the request
     headers = {
         "Authorization": f"Bearer {perplexity_api_key}",
         "Content-Type": "application/json"
     }
     response = requests.post(url, json=payload, headers=headers)
-    # print(response.json())
-    return response.json()['choices'][0]['message']['content']
-    
+    return response.json()['choices']['message']['content']
+
 def get_claude_response(question, pr_files, conversation_history):
     import openai
     openai.api_key = perplexity_api_key
@@ -69,10 +67,11 @@ def get_claude_response(question, pr_files, conversation_history):
         temperature=0.1
     )
     if response.status_code == 200:
-        return ''.join(block for block in response.choices[0].message.content)
+        return ''.join(block for block in response.choices.message.content)
     else:
         print(f"Error: {response.status_code}, {response.error}")
         return 'Sorry, I could not get an answer.'
+
 @app.route("/", methods=['POST'])
 def bot():
     payload = request.json
@@ -83,6 +82,7 @@ def bot():
         return handle_new_comment(payload)
     
     return "ok"
+
 def handle_new_pr(payload):
     owner = payload['repository']['owner']['login']
     repo_name = payload['repository']['name']
@@ -93,13 +93,11 @@ def handle_new_pr(payload):
         ).token
     )
     repo = git_connection.get_repo(f"{owner}/{repo_name}")
-    files = get_pr_files(owner, repo_name, pull_number, os.getenv("GITHUB_TOKEN"))
-    # content_list = [get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN")) for file in files]
     
     try:
         issue = repo.get_issue(number=pull_number)
         issue.create_comment("""
-        👋 Hello! I'm a bot that can assist you with this pull request.
+        👋 Hello I'm a bot that can assist you with this pull request.
         Here's how you can interact with me:
         
         💬 Chat with the code - @bot - Followed by the message
@@ -112,39 +110,49 @@ def handle_new_pr(payload):
         print(f"Error creating initial comment: {e}")
     
     return "ok"
+
 conversation_histories = {}
 file_to_apply_changes = ""
+
 def handle_new_comment(payload):
     owner = payload['repository']['owner']['login']
     repo_name = payload['repository']['name']
     pull_number = payload['issue']['number']
     comment_body = payload['comment']['body']
     ai_fixed_code = ""
+    
     print(f"New comment on PR #{pull_number} by {owner}/{repo_name}: {comment_body}")
+    
     git_connection = github.Github(
         login_or_token=git_integration.get_access_token(
             git_integration.get_installation(owner, repo_name).id
         ).token
     )
+    
     repo = git_connection.get_repo(f"{owner}/{repo_name}")
     
     files = get_pr_files(owner, repo_name, pull_number, os.getenv("GITHUB_TOKEN"))
+    
     content_list = [get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN")) for file in files]
-    # Get the conversation history for this pull request
     
     if comment_body.lower().startswith('@bot'):
         if pull_number not in conversation_histories:
             conversation_histories[pull_number] = []
-        question = comment_body.split(' ', 1)[1]
+        
+        question = comment_body.split(' ', 1)
+        
         conversation_history = conversation_histories[pull_number]
+        
         response = get_perplexity_response(question, content_list, conversation_history)
-        # Update the conversation history only if it's not an error message
+        
         if not response.startswith("An error occurred") and not response.startswith("Sorry, I couldn't generate"):
             conversation_histories[pull_number].append({'role': 'user', 'content': question})
             conversation_histories[pull_number].append({'role': 'assistant', 'content': response})
+            
     elif comment_body.lower().startswith('@style'):
         if len(comment_body.split(' ')) > 1:
             response = ""
+            
             if comment_body.lower().strip() == "@style approve changes":
                 for file in files:
                     content = get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN"))
@@ -153,38 +161,55 @@ def handle_new_comment(payload):
                     
                     with open(f'app_fixed_{file["filename"]}.py', 'w', encoding='utf-8') as f:
                         f.write(ai_fixed_code)
+                    
                     print("Fixed code written to file")
+                    
                     response += f"```python\n{ai_fixed_code}\n\n```"
+                
                 response += "Changes applied successfully"
+                
                 response += "\n\nTo merge these changes reply with '@style Merge Changes'"
+                
             elif comment_body.lower().strip() == "@style merge changes":
                 with open('app_fixed.py', 'r', encoding='utf-8') as f:
-                        ai_fixed_code = f.read()
+                    ai_fixed_code = f.read()
+                
                 if ai_fixed_code:
                     for file in files:
-                        print(file['filename'])
                         create_and_merge(owner, repo_name, file['filename'], ai_fixed_code)
-                        print("branch created")
+                        
+                        print(f"Branch created and merged for {file['filename']}")
+                    
                     response = "Changes merged successfully"
+                
                 else:
                     response = "No changes to merge. Please run '@style Approve Changes' first."
-        else:   
-            for file in files:
-                print(file['filename'])
-                content = get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN"))
-                flake8_output = check_flake8(content)
-                response = f"<details>\n<summary>{file['filename']}</summary>\n\n```\n{flake8_output.strip()}\n```\n\n</details>\n\n"
             
-                response += "\nTo apply these changes reply with '@style Approve Changes'"
+            else:
+                for file in files:
+                    print(file['filename'])
+                    
+                    content = get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN"))
+                    
+                    flake8_output = check_flake8(content)
+                    
+                    response = f"<details>\n<summary>{file['filename']}</summary>\n\n```\n{flake8_output.strip()}\n```\n\n</details>\n\n"
+                    
+                    response += "\nTo apply these changes reply with '@style Approve Changes'"
+                    
     else:
         return "ok"
-    
     
     try:
         issue = repo.get_issue(number=pull_number)
         issue.create_comment(response)
     except github.GithubException as e:
         print(f"Error creating response comment: {e}")
+    
     return "ok"
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+```
+
+Note that the unused import `tempfile` has been removed from the code.
