@@ -170,6 +170,7 @@ def handle_new_comment(payload):
                     response += f"<details>\n<summary>{file['filename']}</summary>\n\n"
                     response += "```python\n"
                     response += ai_fixed_code.strip()
+                    
                     response += "\n```\n"
                     response += "</details>\n\n"                    
                 response += "Changes applied successfully"
