@@ -12,23 +12,23 @@ load_dotenv()
 
 
 
-def analyze_code_perplexity(code_content, flake8_output):
+def analyze_code_perplexity(code_content, linter_output, language):
     client = OpenAI(api_key=os.getenv("PPLX_API_KEY"), base_url="https://api.perplexity.ai")
 
     prompt = f"""\
-As a Python expert, fix the following code based on the Flake8 output:
+As a {language} expert, fix the following code based on the linter output:
 
-1. Apply all Flake8 errors and warnings.
+1. Apply all linter errors and warnings.
 2. Keep line length below 80 characters.
 3. Ensure proper indentation and consistent style.
 4. Only remove unused imports.
 5. Return only the corrected code without explanations.
 
-Python Code:
+{language} Code:
 {code_content}
 
-Flake8 Output:
-{flake8_output}
+Linter Output:
+{linter_output}
 
 Provide only the corrected code:"""
 
@@ -43,7 +43,6 @@ Provide only the corrected code:"""
         return response.choices[0].message.content[10:-3]
     except Exception as e:
         print(f"Error in API call: {str(e)}")
-        # print(f"Response content: {response.text}")
         return f"An error occurred: {str(e)}"
 
 

@@ -47,7 +47,26 @@ def handle_new_comment(payload):
         file_content = get_file_content(file_url, os.getenv("GITHUB_TOKEN"))
         content_list.append(file["filename"] + "\n" + file_content)
     # Get the conversation history for this pull request
-    
+    def get_language(filename):
+        extension = os.path.splitext(filename)[1]
+        language_map = {
+            '.py': 'Python',
+            '.js': 'JavaScript',
+            '.ts': 'TypeScript',
+            '.java': 'Java',
+            '.cpp': 'C++',
+            '.rb': 'Ruby'
+        }
+        return language_map.get(extension, 'Unknown')
+
+    def run_linter(content, language):
+        if language == 'Python':
+            return check_flake8(content)
+        # elif language in ['JavaScript', 'TypeScript']:
+        #     return check_eslint(content)
+        
+        else:
+            return "Unsupported language"
     if comment_body.lower().startswith('@bot'):
         if pull_number not in conversation_histories:
             conversation_histories[pull_number] = []
@@ -94,10 +113,12 @@ def handle_new_comment(payload):
             ai_fixed_code = ""
             response = ""
             for file in files:
-                print(file['filename'])
                 content = get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN"))
-                flake8_output = check_flake8(content)
-                response += f"<details>\n<summary>{file['filename']}</summary>\n\n```\n{flake8_output.strip()}\n```\n\n</details>\n\n"
+                language = get_language(file['filename'])
+                linter_output = run_linter(content, language)
+                ai_fixed_code = analyze_code_perplexity(content, linter_output, language)
+            
+                response += f"<details>\n<summary>{file['filename']}</summary>\n\n```\n{ai_fixed_code.strip()}\n```\n\n</details>\n\n"
             
             response += "\nTo apply these changes reply with '@style Approve Changes'"
     else:
