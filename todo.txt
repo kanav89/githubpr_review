@@ -1,0 +1,5 @@
+1. Implement langchain for the ai chat(chat history, context, etc.)
+2. write better prompt for code fixer
+3. make sure only python code is commited and not any other comments
+4. test with multiple users at the same time
+5. make the pr comments more informative
