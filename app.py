@@ -36,6 +36,7 @@ git_integration = GithubIntegration(
     app_key, 
 )
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
