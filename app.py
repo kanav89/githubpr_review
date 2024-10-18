@@ -25,11 +25,12 @@ app_id = os.getenv("APP_ID")
 perplexity_api_key = os.getenv("PERPLEXITY_API_KEY")
 ai_fixed_code_list = []
 ai_fixed_code = ""
-with open(
-        os.path.normpath(os.path.expanduser(os.getenv("PRIVATE_KEY_PATH"))),
-        'r'
-) as cert_file:
-    app_key = cert_file.read()
+# with open(
+#         os.path.normpath(os.path.expanduser(os.getenv("PRIVATE_KEY_PATH"))),
+#         'r'
+# ) as cert_file:
+#     app_key = cert_file.read()
+app_key = os.getenv("PRIVATE_KEY")
 git_integration = GithubIntegration(
     app_id,
     app_key, 
