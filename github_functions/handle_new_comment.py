@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 from github_functions.get_pr import get_file_content, get_pr_files
 from github_functions.create_pr import create_and_merge
 from ai_functions.ai_chat import get_perplexity_response
-from ai_functions.ai_fixer import analyze_code_perplexity
-from code_analysis.flake8_checker import check_flake8
+from ai_functions.ai_fixer import analyze_code_perplexity, analyze_code_anthropic
+from code_analysis.code_checker import check_flake8
 from ai_functions.chatbot import create_chatbot
 load_dotenv()
 app_id = os.getenv("APP_ID")
@@ -75,13 +75,18 @@ def handle_new_comment(payload):
         response = create_chatbot(question, content_list)
     elif comment_body.lower().startswith('@style'):
         
-        if len(comment_body.split(' ')) > 1:
+        if len(comment_body.strip().split(' ')) > 1:
             response = ""
             if comment_body.lower().strip() == "@style approve changes":
                 for file in files:
                     content = get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN"))
-                    flake8_output = check_flake8(content)
-                    ai_fixed_code = analyze_code_perplexity(content, flake8_output=flake8_output)
+                    language = get_language(file['filename'])
+                    print(language)
+                    if language == "Unknown":
+                        response += f"Skipping {file['filename']} as it is an unsupported language\n"
+                        continue
+                    linter_output = run_linter(content, language)
+                    ai_fixed_code = analyze_code_anthropic(content, linter_output, language)
                     ai_fixed_code_list.append(ai_fixed_code)
                     
                    
@@ -102,26 +107,42 @@ def handle_new_comment(payload):
                     count = 0
                     for file in files:
                         print(file['filename'])
-                        create_and_merge(owner, repo_name, file['filename'], ai_fixed_code_list[count])
-                        print(f"Branch created and merged for {file['filename']}")
-                        count += 1
+                        language = get_language(file['filename'])
+                        print(language)
+                        if language == "Unknown":
+                            response += f"Skipping {file['filename']} as it is an unsupported language\n"
+                            continue
+                        if count < len(ai_fixed_code_list):
+                            create_and_merge(owner, repo_name, file['filename'], ai_fixed_code_list[count])
+                            print(f"Branch created and merged for {file['filename']}")
+                            count += 1
+                        else:
+                            print(f"No changes to apply for {file['filename']}")
                     response = "Changes merged successfully"
                 else:
                     response = "No changes to merge. Please run '@style Approve Changes' first."
         else:   
+            print("Checking for styling issues")
             ai_fixed_code_list = []
             ai_fixed_code = ""
             response = ""
+            # print(response)
             for file in files:
                 content = get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN"))
                 language = get_language(file['filename'])
+                print(language)
+                if language == "Unknown":
+                    response += f"Skipping {file['filename']} as it is an unsupported language\n"
+                    continue
                 linter_output = run_linter(content, language)
-                ai_fixed_code = analyze_code_perplexity(content, linter_output, language)
+                # ai_fixed_code = analyze_code_perplexity(content, linter_output, language)
             
-                response += f"<details>\n<summary>{file['filename']}</summary>\n\n```\n{ai_fixed_code.strip()}\n```\n\n</details>\n\n"
+                response += f"<details>\n<summary>{file['filename']}</summary>\n\n```\n{linter_output.strip()}\n```\n\n</details>\n\n"
             
             response += "\nTo apply these changes reply with '@style Approve Changes'"
+            print("finished checking for styling issues")
     else:
+        print("No comment")
         return "ok"
     
     
