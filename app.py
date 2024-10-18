@@ -8,6 +8,8 @@ import logging
 
 from github_functions.handle_new_pr import handle_new_pr
 from github_functions.handle_new_comment import handle_new_comment
+import hmac
+import hashlib
 # from flask_limiter import Limiter
 # from flask_limiter.util import get_remote_address
 
@@ -36,10 +38,18 @@ git_integration = GithubIntegration(
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+def is_valid_signature(signature, payload, secret):
+    expected_signature = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(f"sha256={expected_signature}", signature)
 @app.route("/", methods=['POST'])
 # @limiter.limit("10 per minute")
 def bot():
     try:
+        # Verify webhook signature
+        signature = request.headers.get('X-Hub-Signature-256')
+        if not is_valid_signature(signature, request.data, os.getenv('GITHUB_WEBHOOK_SECRET')):
+            return "Invalid signature", 403
         payload = request.json
         if payload.get('action') == 'opened' and 'pull_request' in payload:
             logger.info("Handling new pull request")

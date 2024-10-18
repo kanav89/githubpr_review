@@ -3,3 +3,10 @@ requests==2.26.0
 PyGithub==1.55
 python-dotenv==0.19.0
 Flask-Limiter==1.4
+anthropic==0.3.0
+openai==0.27.0
+langchain-anthropic==0.0.2
+langgraph==0.0.10
+langchain-core==0.0.7
+radon==5.1.0
+bandit==1.7.5
