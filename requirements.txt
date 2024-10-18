@@ -11,3 +11,4 @@ langchain-core>=0.1.0
 radon==5.1.0
 bandit==1.7.5
 Werkzeug>=2.0.3
+langchain-community>=0.0.1
