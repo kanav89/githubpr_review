@@ -10,6 +10,7 @@ from github_functions.handle_new_pr import handle_new_pr
 from github_functions.handle_new_comment import handle_new_comment
 import hmac
 import hashlib
+import base64
 # from flask_limiter import Limiter
 # from flask_limiter.util import get_remote_address
 
@@ -30,7 +31,9 @@ ai_fixed_code = ""
 #         'r'
 # ) as cert_file:
 #     app_key = cert_file.read()
-app_key = os.getenv("PRIVATE_KEY")
+github_private_key_base64 = os.environ.get('PRIVATE_KEY_BASE64')
+github_private_key = base64.b64decode(github_private_key_base64).decode('utf-8')
+app_key = github_private_key
 git_integration = GithubIntegration(
     app_id,
     app_key, 
