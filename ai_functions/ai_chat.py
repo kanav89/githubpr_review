@@ -1,7 +1,6 @@
 import requests
 import os
 from dotenv import load_dotenv
-from langchain_community.chat_models import ChatPerplexity
 
 load_dotenv()
 
