@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from github_functions.get_pr import get_file_content, get_pr_files
 from github_functions.create_pr import create_and_merge
 from ai_functions.ai_chat import get_perplexity_response
-from ai_functions.ai_fixer import analyze_code_perplexity, analyze_code_anthropic
+from ai_functions.ai_fixer import  analyze_code_anthropic
 from code_analysis.code_checker import check_flake8
 from ai_functions.chatbot import create_chatbot
 import base64
