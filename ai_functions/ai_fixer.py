@@ -1,48 +1,45 @@
-import subprocess
-import sys
-import anthropic
-from anthropic import HUMAN_PROMPT,AI_PROMPT
+
+
 import os
 from dotenv import load_dotenv
 from anthropic import Anthropic
 
-from openai import OpenAI
-import requests
+
 load_dotenv()
 
 
 
-def analyze_code_perplexity(code_content, linter_output, language):
-    client = OpenAI(api_key=os.getenv("PPLX_API_KEY"), base_url="https://api.perplexity.ai")
+# def analyze_code_perplexity(code_content, linter_output, language):
+#     client = OpenAI(api_key=os.getenv("PPLX_API_KEY"), base_url="https://api.perplexity.ai")
 
-    prompt = f"""\
-As a {language} expert, fix the following code based on the linter output:
+#     prompt = f"""\
+# As a {language} expert, fix the following code based on the linter output:
 
-1. Apply all linter errors and warnings.
-2. Keep line length below 80 characters.
-3. Ensure proper indentation and consistent style.
-4. Only remove unused imports.
-5. Return only the corrected code without explanations.
+# 1. Apply all linter errors and warnings.
+# 2. Keep line length below 80 characters.
+# 3. Ensure proper indentation and consistent style.
+# 4. Only remove unused imports.
+# 5. Return only the corrected code without explanations.
 
-{language} Code:
-{code_content}
+# {language} Code:
+# {code_content}
 
-Linter Output:
-{linter_output}
+# Linter Output:
+# {linter_output}
 
-Provide only the corrected code:"""
+# Provide only the corrected code:"""
 
-    try:
-        response = client.chat.completions.create(
-            model="llama-3.1-sonar-small-128k-chat",
-            max_tokens=2000,
-            messages=[{"role": "user", "content": prompt}],
-        )
+#     try:
+#         response = client.chat.completions.create(
+#             model="llama-3.1-sonar-small-128k-chat",
+#             max_tokens=2000,
+#             messages=[{"role": "user", "content": prompt}],
+#         )
         
-        return response.choices[0].message.content[10:-3]
-    except Exception as e:
-        print(f"Error in API call: {str(e)}")
-        return f"An error occurred: {str(e)}"
+#         return response.choices[0].message.content[10:-3]
+#     except Exception as e:
+#         print(f"Error in API call: {str(e)}")
+#         return f"An error occurred: {str(e)}"
 
 
 
