@@ -1,0 +1,19 @@
+# Language selection for the checker
+language_options:
+  - python
+  - javascript
+  - java
+  - cpp
+  - ruby
+
+# Default language if not specified
+default_language: python
+
+# Checker configuration
+checker:
+  enabled: true
+  strict_mode: false
+  
+# Output settings
+
+# Add any other relevant configuration options here

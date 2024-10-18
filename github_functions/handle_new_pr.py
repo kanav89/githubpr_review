@@ -35,8 +35,7 @@ def handle_new_pr(payload):
         
         💬 Chat with the code - @bot - Followed by the message
         🎨 Check styling issues - @style
-        🔒 Check security issues - @security
-        🧠 Check complexity issues - @complexity
+
         Feel free to use any of these commands in a comment, and I'll be happy to help!
         """)
     except github.GithubException as e:

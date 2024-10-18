@@ -12,23 +12,23 @@ load_dotenv()
 
 
 
-def analyze_code_perplexity(code_content, flake8_output):
+def analyze_code_perplexity(code_content, linter_output, language):
     client = OpenAI(api_key=os.getenv("PPLX_API_KEY"), base_url="https://api.perplexity.ai")
 
     prompt = f"""\
-As a Python expert, fix the following code based on the Flake8 output:
+As a {language} expert, fix the following code based on the linter output:
 
-1. Apply all Flake8 errors and warnings.
+1. Apply all linter errors and warnings.
 2. Keep line length below 80 characters.
 3. Ensure proper indentation and consistent style.
 4. Only remove unused imports.
 5. Return only the corrected code without explanations.
 
-Python Code:
+{language} Code:
 {code_content}
 
-Flake8 Output:
-{flake8_output}
+Linter Output:
+{linter_output}
 
 Provide only the corrected code:"""
 
@@ -36,20 +36,52 @@ Provide only the corrected code:"""
         response = client.chat.completions.create(
             model="llama-3.1-sonar-small-128k-chat",
             max_tokens=2000,
-            temperature=0.1,
             messages=[{"role": "user", "content": prompt}],
         )
         
         return response.choices[0].message.content[10:-3]
     except Exception as e:
         print(f"Error in API call: {str(e)}")
-        # print(f"Response content: {response.text}")
         return f"An error occurred: {str(e)}"
 
 
 
+
+
+def analyze_code_anthropic(code_content, linter_output, language):
+    client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+    prompt = f"""\
+As a {language} expert, fix the following code based on the linter output:
+
+1. Apply all linter errors and warnings.
+2. Keep line length below 80 characters.
+3. Ensure proper indentation and consistent style.
+4. Only remove unused imports.
+5. Return only the corrected code without explanations.
+
+{language} Code:
+{code_content}
+
+Linter Output:
+{linter_output}
+
+Provide only the corrected code:"""
+
+    try:
+        response = client.messages.create(
+            model="claude-3-sonnet-20240229",
+            max_tokens=3000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        
+        return response.content[0].text.strip()
+    except Exception as e:
+        print(f"Error in API call: {str(e)}")
+        return f"An error occurred: {str(e)}"
+
 # Add this test function at the end of the file
-def test_analyze_code_perplexity():
+def test_analyze_code_anthropic():
     # Test code with intentional Flake8 errors
     test_code = """
 import os, sys
@@ -68,13 +100,17 @@ test_code.py:4:6: E225 missing whitespace around operator
 test_code.py:5:11: E226 missing whitespace around arithmetic operator
 """
 
-    corrected_code = analyze_code_perplexity(test_code, flake8_output)
+    corrected_code = analyze_code_anthropic(test_code, flake8_output, "python")
     print("Original code:")
     print(test_code)
     print("\nCorrected code:")
     print(corrected_code[10:-3])
 
+
+
+
+
 if __name__ == "__main__":
-    test_analyze_code_perplexity()
+    test_analyze_code_anthropic()
 
 
