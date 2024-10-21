@@ -11,6 +11,8 @@ from ai_functions.chatbot import create_chatbot
 import base64
 load_dotenv()
 
+
+
 app_id = os.getenv("APP_ID")
 
 # with open(
