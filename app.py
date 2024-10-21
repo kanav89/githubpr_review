@@ -44,6 +44,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+
 def is_valid_signature(signature, payload, secret):
     expected_signature = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
     return hmac.compare_digest(f"sha256={expected_signature}", signature)
