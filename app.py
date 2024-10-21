@@ -70,6 +70,7 @@ def create_app():
             webhook_secret = os.getenv('GITHUB_WEBHOOK_SECRET')
             if not is_valid_signature(signature, request.data, webhook_secret):
                 print(f"Invalid signature received: {signature}")
+                
                 print(f"Webhook secret: {webhook_secret}")
                 # print(f"Request data: {request.data}")
                 logger.warning("Invalid signature received")
