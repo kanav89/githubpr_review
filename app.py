@@ -46,16 +46,33 @@ logger = logging.getLogger(__name__)
 
 
 def is_valid_signature(signature, payload, secret):
-    expected_signature = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(f"sha256={expected_signature}", signature)
+    if not secret:
+        logger.error("Webhook secret is not set")
+        return False
+    if not signature:
+        logger.error("X-Hub-Signature-256 header is missing")
+        return False
+    try:
+        expected_signature = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
+        return hmac.compare_digest(f"sha256={expected_signature}", signature)
+    except Exception as e:
+        logger.error(f"Error validating signature: {str(e)}")
+        return False
+
 @app.route("/", methods=['POST'])
 # @limiter.limit("10 per minute")
 def bot():
     try:
         # Verify webhook signature
         signature = request.headers.get('X-Hub-Signature-256')
-        if not is_valid_signature(signature, request.data, os.getenv('GITHUB_WEBHOOK_SECRET')):
+        webhook_secret = os.getenv('GITHUB_WEBHOOK_SECRET')
+        if not is_valid_signature(signature, request.data, webhook_secret):
+            print(f"Invalid signature received: {signature}")
+            print(f"Webhook secret: {webhook_secret}")
+            # print(f"Request data: {request.data}")
+            logger.warning("Invalid signature received")
             return "Invalid signature", 403
+        
         payload = request.json
         if payload.get('action') == 'opened' and 'pull_request' in payload:
             logger.info("Handling new pull request")
@@ -67,9 +84,8 @@ def bot():
             logger.info("Received unhandled webhook event")
         return "ok"
     except Exception as e:
-        logger.error(f"An error occurred: {str(e)}")
+        logger.error(f"An error occurred: {str(e)}", exc_info=True)
         return "Internal server error", 500
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
-
