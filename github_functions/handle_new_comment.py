@@ -9,8 +9,7 @@ from ai_functions.ai_fixer import  analyze_code_anthropic
 from code_analysis.code_checker import check_flake8
 from ai_functions.chatbot import create_chatbot
 import base64
-import asyncio
-import aiohttp
+
 load_dotenv()
 
 
@@ -34,7 +33,7 @@ git_integration = GithubIntegration(
 
 conversation_histories = {}
 file_to_apply_changes = ""
-async def handle_new_comment(payload):
+def handle_new_comment(payload):
     owner = payload['repository']['owner']['login']
     repo_name = payload['repository']['name']
     pull_number = payload['issue']['number']
@@ -50,11 +49,11 @@ async def handle_new_comment(payload):
     )
     repo = git_connection.get_repo(f"{owner}/{repo_name}")
     
-    files = await get_pr_files(owner, repo_name, pull_number, os.getenv("GITHUB_TOKEN"))
+    files = get_pr_files(owner, repo_name, pull_number, os.getenv("GITHUB_TOKEN"))
     content_list = []
     for file in files:
         file_url = file['contents_url']
-        file_content = await get_file_content(file_url, os.getenv("GITHUB_TOKEN"))
+        file_content = get_file_content(file_url, os.getenv("GITHUB_TOKEN"))
         content_list.append(file["filename"] + "\n" + file_content)
     # Get the conversation history for this pull request
     def get_language(filename):
@@ -62,14 +61,12 @@ async def handle_new_comment(payload):
         language_map = {
             '.py': 'Python',
             '.js': 'JavaScript',
-            '.ts': 'TypeScript',
             '.java': 'Java',
-            '.cpp': 'C++',
-            '.rb': 'Ruby'
+            
         }
         return language_map.get(extension, 'Unknown')
 
-    async def run_linter(content, language):
+    def run_linter(content, language):
         if language == 'Python':
             return check_flake8(content)
         # elif language in ['JavaScript', 'TypeScript']:
@@ -89,23 +86,25 @@ async def handle_new_comment(payload):
             response = ""
             if comment_body.lower().strip() == "@style approve changes":
                 for file in files:
-                    content = await get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN"))
+                    content = get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN"))
                     language = get_language(file['filename'])
                     print(language)
                     if language == "Unknown":
                         response += f"Skipping {file['filename']} as it is an unsupported language\n"
                         continue
-                    linter_output = await run_linter(content, language)
+                    linter_output = run_linter(content, language)
                     ai_fixed_code = analyze_code_anthropic(content, linter_output, language)
                     ai_fixed_code_list.append(ai_fixed_code)
                     
-                   
                     print("Fixed code written to file")
                     response += f"<details>\n<summary>{file['filename']}</summary>\n\n"
-                    response += "```python\n"
+                    if language == 'Python':
+                        response += "```python\n"
+                    elif language in ['JavaScript', 'TypeScript']:
+                        response += "```javascript\n"
+                    elif language == 'Java':
+                        response += "```java\n"
                     response += ai_fixed_code
-                    
-
                     response += "\n```\n"
                     response += "</details>\n\n"                    
                 response += "Changes applied successfully"
@@ -123,7 +122,7 @@ async def handle_new_comment(payload):
                             response += f"Skipping {file['filename']} as it is an unsupported language\n"
                             continue
                         if count < len(ai_fixed_code_list):
-                            await create_and_merge(owner, repo_name, file['filename'], ai_fixed_code_list[count])
+                            create_and_merge(owner, repo_name, file['filename'], ai_fixed_code_list[count])
                             print(f"Branch created and merged for {file['filename']}")
                             count += 1
                         else:
@@ -138,13 +137,13 @@ async def handle_new_comment(payload):
             response = ""
             # print(response)
             for file in files:
-                content = await get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN"))
+                content = get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN"))
                 language = get_language(file['filename'])
                 print(language)
                 if language == "Unknown":
                     response += f"Skipping {file['filename']} as it is an unsupported language\n"
                     continue
-                linter_output = await run_linter(content, language)
+                linter_output = run_linter(content, language)
                 # ai_fixed_code = analyze_code_perplexity(content, linter_output, language)
             
                 response += f"<details>\n<summary>{file['filename']}</summary>\n\n```\n{linter_output.strip()}\n```\n\n</details>\n\n"

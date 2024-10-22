@@ -5,7 +5,8 @@ import github
 from github import GithubIntegration
 from dotenv import load_dotenv
 import logging
-
+from werkzeug.serving import run_simple
+import json
 from github_functions.handle_new_pr import handle_new_pr
 from github_functions.handle_new_comment import handle_new_comment
 import hmac
@@ -94,3 +95,7 @@ def create_app():
 
 # Create the app instance
 app = create_app()
+
+# Add this at the end of the file
+if __name__ == '__main__':
+    app.run(host='localhost', port=5000, debug=True, threaded=True)

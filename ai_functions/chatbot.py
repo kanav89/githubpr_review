@@ -35,7 +35,7 @@ def create_chatbot(query: str, context: str) -> Dict[str, Any]:
     prompt = ChatPromptTemplate.from_messages([
         (
             "system",
-            "You are a helpful code assistant that can answer questions and help with tasks. Use this {context} to answer the user's question",
+            "You are a helpful code assistant that can answer questions and help with tasks. Use this {context} from the pull request to answer the user's question",
         ),
         MessagesPlaceholder(variable_name="messages"),
     ])

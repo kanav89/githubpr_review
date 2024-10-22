@@ -3,8 +3,7 @@ language_options:
   - python
   - javascript
   - java
-  - cpp
-  - ruby
+  
 
 # Default language if not specified
 default_language: python
