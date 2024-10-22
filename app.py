@@ -12,24 +12,13 @@ from github_functions.handle_new_comment import handle_new_comment
 import hmac
 import hashlib
 import base64
-# from flask_limiter import Limiter
-# from flask_limiter.util import get_remote_address
 
-# limiter = Limiter(
-#     get_remote_address,
-#     app=app,
-#     default_limits=["200 per day", "50 per hour"]
-# )
 load_dotenv()
 
 perplexity_api_key = os.getenv("PERPLEXITY_API_KEY")
 ai_fixed_code_list = []
 ai_fixed_code = ""
-# with open(
-#         os.path.normpath(os.path.expanduser(os.getenv("PRIVATE_KEY_PATH"))),
-#         'r'
-# ) as cert_file:
-#     app_key = cert_file.read()'
+
 app_id = os.getenv("APP_ID")
 
 github_private_key_base64 = os.environ.get('PRIVATE_KEY_BASE64')
@@ -96,6 +85,5 @@ def create_app():
 # Create the app instance
 app = create_app()
 
-# Add this at the end of the file
 if __name__ == '__main__':
     app.run(host='localhost', port=5000, debug=True, threaded=True)

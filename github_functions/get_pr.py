@@ -62,7 +62,5 @@ def main():
             print(content)
 
 if __name__ == '__main__':
-    # files = get_pr_files("kanav89", "githubpr_review", "15", os.getenv("GITHUB_TOKEN"))
     
-    # print(files)
     main()

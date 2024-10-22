@@ -141,52 +141,6 @@ def create_and_merge(owner, repo, file_path, file_content):
     except Exception as e:
         print(f"An error occurred: {str(e)}")
 
-# def main():
-#     try:
-#         token = load_github_token()
-#         headers = create_headers(token)
-
-#         owner = 'kanav89'
-#         repo = 'githubpr_review'
-#         new_branch_name = 'new-feature-branch'
-
-#         base_url = f'https://api.github.com/repos/{owner}/{repo}'
-
-#         repo_info = check_repository_access(base_url, headers)
-#         default_branch = repo_info['default_branch']
-#         print(f"Default branch: {default_branch}")
-
-#         base_sha = get_default_branch_sha(base_url, default_branch, headers)
-
-#         branch = get_or_create_branch(base_url, new_branch_name, base_sha, headers)
-#         print(f"Using branch: {branch['ref']}")
-
-#         # Create a new file on the branch
-#         file_path = 'new_feature.txt'
-#         file_content = 'This is a new feature.'
-#         commit_message = 'Add new feature file'
-#         try:
-#             new_file = create_file_on_branch(base_url, new_branch_name, file_path, file_content, commit_message, headers)
-#             print(f"New file created: {new_file['content']['path']}")
-#         except Exception as e:
-#             if "sha" in str(e):
-#                 print(f"File '{file_path}' already exists. Skipping file creation.")
-#             else:
-#                 raise e
-
-#         pr_title = "New feature implementation"
-#         pr_body = "This pull request adds a new feature to our project."
-#         try:
-#             new_pr = create_pull_request(base_url, new_branch_name, default_branch, headers, pr_title, pr_body)
-#             print(f"New pull request created: {new_pr['html_url']}")
-#         except Exception as e:
-#             if "A pull request already exists" in str(e):
-#                 print("A pull request for this branch already exists. Skipping PR creation.")
-#             else:
-#                 raise e
-
-#     except Exception as e:
-#         print(f"An error occurred: {str(e)}")
 
 if __name__ == "__main__":
     create_and_merge()

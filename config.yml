@@ -1,8 +1,7 @@
 # Language selection for the checker
 language_options:
   - python
-  - javascript
-  - java
+  
   
 
 # Default language if not specified
@@ -15,4 +14,3 @@ checker:
   
 # Output settings
 
-# Add any other relevant configuration options here

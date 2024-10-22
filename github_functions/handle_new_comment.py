@@ -15,11 +15,6 @@ load_dotenv()
 
 app_id = os.getenv("APP_ID")
 
-# with open(
-#         os.path.normpath(os.path.expanduser('./prreviewer.2024-08-31.private-key.pem')),
-#         'r'
-# ) as cert_file:
-#     app_key = cert_file.read()
 
 github_private_key_base64 = os.environ.get('PRIVATE_KEY_BASE64')
 github_private_key = base64.b64decode(github_private_key_base64).decode('utf-8')

@@ -12,7 +12,6 @@ from typing_extensions import Annotated, TypedDict
 def create_chatbot(query: str, context: str) -> Dict[str, Any]:
     load_dotenv()
 
-    # anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
     model = ChatAnthropic(model="claude-3-5-sonnet-20240620")
 
     class State(TypedDict):
@@ -46,9 +45,3 @@ def create_chatbot(query: str, context: str) -> Dict[str, Any]:
     output = app.invoke({"messages": input_messages, "context": context}, config)
     return output["messages"][-1].content
 
-# Example usage (can be removed when using as a module)
-# if __name__ == "__main__":
-#     context = "print('hello world')"
-#     query = "Explain the code"
-#     response = create_chatbot(query, context)
-#     print(response)

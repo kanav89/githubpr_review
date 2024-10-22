@@ -1,18 +1,10 @@
 
-
 import os
 from dotenv import load_dotenv
 from anthropic import Anthropic
 
 
 load_dotenv()
-
-
-
-
-
-
-
 
 
 def analyze_code_anthropic(code_content, linter_output, language):
@@ -45,37 +37,5 @@ Provide only the corrected code:"""
         print(f"Error in API call: {str(e)}")
         return f"An error occurred: {str(e)}"
 
-# Add this test function at the end of the file
-def test_analyze_code_anthropic():
-    # Test code with intentional Flake8 errors
-    test_code = """
-import os, sys
-def my_function( ):
-    x=1
-    y= 2
-    print(x+y)
-    """
-
-    # Simulated Flake8 output
-    flake8_output = """
-test_code.py:1:10: E401 multiple imports on one line
-test_code.py:2:16: E201 whitespace after '('
-test_code.py:3:5: E225 missing whitespace around operator
-test_code.py:4:6: E225 missing whitespace around operator
-test_code.py:5:11: E226 missing whitespace around arithmetic operator
-"""
-
-    corrected_code = analyze_code_anthropic(test_code, flake8_output, "python")
-    print("Original code:")
-    print(test_code)
-    print("\nCorrected code:")
-    print(corrected_code[10:-3])
-
-
-
-
-
-if __name__ == "__main__":
-    test_analyze_code_anthropic()
 
 
