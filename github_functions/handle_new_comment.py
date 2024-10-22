@@ -4,7 +4,6 @@ from github import GithubIntegration
 from dotenv import load_dotenv
 from github_functions.get_pr import get_file_content, get_pr_files
 from github_functions.create_pr import create_and_merge
-from ai_functions.ai_chat import get_perplexity_response
 from ai_functions.ai_fixer import  analyze_code_anthropic
 from code_analysis.code_checker import check_flake8
 from ai_functions.chatbot import create_chatbot
@@ -32,14 +31,15 @@ git_integration = GithubIntegration(
 
 
 conversation_histories = {}
+ai_fixed_code_list = []
 file_to_apply_changes = ""
 def handle_new_comment(payload):
+    global ai_fixed_code_list
+    
     owner = payload['repository']['owner']['login']
     repo_name = payload['repository']['name']
     pull_number = payload['issue']['number']
     comment_body = payload['comment']['body']
-    global ai_fixed_code_list
-    global ai_fixed_code
     
     print(f"New comment on PR #{pull_number} by {owner}/{repo_name}: {comment_body}")
     git_connection = github.Github(
@@ -60,8 +60,7 @@ def handle_new_comment(payload):
         extension = os.path.splitext(filename)[1]
         language_map = {
             '.py': 'Python',
-            '.js': 'JavaScript',
-            '.java': 'Java',
+            
             
         }
         return language_map.get(extension, 'Unknown')
@@ -85,6 +84,7 @@ def handle_new_comment(payload):
         if len(comment_body.strip().split(' ')) > 1:
             response = ""
             if comment_body.lower().strip() == "@style approve changes":
+                ai_fixed_code_list = []  # Reset the list before approving changes
                 for file in files:
                     content = get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN"))
                     language = get_language(file['filename'])
@@ -110,14 +110,13 @@ def handle_new_comment(payload):
                 response += "Changes applied successfully"
                 response += "\n\nTo merge these changes reply with '@style Merge Changes'"
             elif comment_body.lower().strip() == "@style merge changes":
-               
-                print(len(ai_fixed_code_list))
+                print(f"Number of files to merge: {len(ai_fixed_code_list)}")
                 if len(ai_fixed_code_list) > 0:
                     count = 0
                     for file in files:
-                        print(file['filename'])
+                        print(f"Processing file: {file['filename']}")
                         language = get_language(file['filename'])
-                        print(language)
+                        print(f"Language: {language}")
                         if language == "Unknown":
                             response += f"Skipping {file['filename']} as it is an unsupported language\n"
                             continue
