@@ -1,6 +1,8 @@
 # Gunicorn configuration file
+import multiprocessing
+
 # Number of workers
-NUM_WORKERS=4
+workers = multiprocessing.cpu_count() * 2 + 1
 # Timeout
-TIMEOUT=120
+timeout = 300
 
