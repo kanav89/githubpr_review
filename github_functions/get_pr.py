@@ -3,27 +3,28 @@ import os
 from getpass import getpass
 from base64 import b64decode
 from dotenv import load_dotenv
+import asyncio
 
 load_dotenv()
 
 def get_github_token():
     return os.getenv('GITHUB_TOKEN') 
 
-def get_user_prs(username, token):
+async def get_user_prs(username, token):
     url = f'https://api.github.com/search/issues?q=is:pr+author:{username}+is:open'
     headers = {'Authorization': f'token {token}'}
     response = requests.get(url, headers=headers)
     response.raise_for_status()
     return response.json()['items']
 
-def get_pr_files(owner, repo, pull_number, token):
+async def get_pr_files(owner, repo, pull_number, token):
     url = f'https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/files'
     headers = {'Authorization': f'token {token}'}
     response = requests.get(url, headers=headers)
     response.raise_for_status()
     return response.json()
 
-def get_file_content(file_url, token):
+async def get_file_content(file_url, token):
     headers = {'Authorization': f'token {token}'}
     response = requests.get(file_url, headers=headers)
     response.raise_for_status()
