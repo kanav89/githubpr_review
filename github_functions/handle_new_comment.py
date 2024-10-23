@@ -8,6 +8,7 @@ from ai_functions.ai_fixer import  analyze_code_anthropic
 from code_analysis.code_checker import check_flake8
 from ai_functions.chatbot import create_chatbot
 import base64
+import json
 
 load_dotenv()
 
@@ -63,8 +64,7 @@ def handle_new_comment(payload):
     def run_linter(content, language):
         if language == 'Python':
             return check_flake8(content)
-        # elif language in ['JavaScript', 'TypeScript']:
-        #     return check_eslint(content)
+        
         
         else:
             return "Unsupported language"
@@ -79,7 +79,7 @@ def handle_new_comment(payload):
         if len(comment_body.strip().split(' ')) > 1:
             response = ""
             if comment_body.lower().strip() == "@style approve changes":
-                ai_fixed_code_list = []  # Reset the list before approving changes
+                ai_fixed_code_list = []  # Local variable
                 for file in files:
                     content = get_file_content(file['contents_url'], os.getenv("GITHUB_TOKEN"))
                     language = get_language(file['filename'])
@@ -102,28 +102,42 @@ def handle_new_comment(payload):
                     response += ai_fixed_code
                     response += "\n```\n"
                     response += "</details>\n\n"                    
-                response += "Changes applied successfully"
-                response += "\n\nTo merge these changes reply with '@style Merge Changes'"
+                # Write ai_fixed_code_list to a file
+                file_path = f"ai_fixed_code_{owner}_{repo_name}_{pull_number}.json"
+                with open(file_path, 'w') as f:
+                    json.dump(ai_fixed_code_list, f)
+                
+                response += "\n\nChanges have been saved. To merge these changes, reply with '@style Merge Changes'"
             elif comment_body.lower().strip() == "@style merge changes":
-                print(f"Number of files to merge: {len(ai_fixed_code_list)}")
-                if len(ai_fixed_code_list) > 0:
-                    count = 0
-                    for file in files:
-                        print(f"Processing file: {file['filename']}")
-                        language = get_language(file['filename'])
-                        print(f"Language: {language}")
-                        if language == "Unknown":
-                            response += f"Skipping {file['filename']} as it is an unsupported language\n"
-                            continue
-                        if count < len(ai_fixed_code_list):
-                            create_and_merge(owner, repo_name, file['filename'], ai_fixed_code_list[count])
-                            print(f"Branch created and merged for {file['filename']}")
-                            count += 1
-                        else:
-                            print(f"No changes to apply for {file['filename']}")
-                    response = "Changes merged successfully"
+                # Read ai_fixed_code_list from the file
+                file_path = f"ai_fixed_code_{owner}_{repo_name}_{pull_number}.json"
+                if os.path.exists(file_path):
+                    with open(file_path, 'r') as f:
+                        ai_fixed_code_list = json.load(f)
+                    
+                    print(f"Number of files to merge: {len(ai_fixed_code_list)}")
+                    if len(ai_fixed_code_list) > 0:
+                        count = 0
+                        for file in files:
+                            print(f"Processing file: {file['filename']}")
+                            language = get_language(file['filename'])
+                            print(f"Language: {language}")
+                            if language == "Unknown":
+                                response += f"Skipping {file['filename']} as it is an unsupported language\n"
+                                continue
+                            if count < len(ai_fixed_code_list):
+                                create_and_merge(owner, repo_name, file['filename'], ai_fixed_code_list[count])
+                                print(f"Branch created and merged for {file['filename']}")
+                                count += 1
+                            else:
+                                print(f"No changes to apply for {file['filename']}")
+                        # Delete the file after successful merge
+                        os.remove(file_path)
+                        response = "Changes merged successfully"
+                    else:
+                        response = "No changes to merge. Please run '@style Approve Changes' first."
                 else:
-                    response = "No changes to merge. Please run '@style Approve Changes' first."
+                    response = "No approved changes found. Please run '@style Approve Changes' first."
         else:   
             print("Checking for styling issues")
             ai_fixed_code_list = []
@@ -138,7 +152,6 @@ def handle_new_comment(payload):
                     response += f"Skipping {file['filename']} as it is an unsupported language\n"
                     continue
                 linter_output = run_linter(content, language)
-                # ai_fixed_code = analyze_code_perplexity(content, linter_output, language)
             
                 response += f"<details>\n<summary>{file['filename']}</summary>\n\n```\n{linter_output.strip()}\n```\n\n</details>\n\n"
             
