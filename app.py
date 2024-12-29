@@ -1,12 +1,8 @@
 import os
-import requests
 from flask import Flask, request, Response
-import github
 from github import GithubIntegration
 from dotenv import load_dotenv
 import logging
-from werkzeug.serving import run_simple
-import json
 from github_functions.handle_new_pr import handle_new_pr
 from github_functions.handle_new_comment import handle_new_comment
 import hmac
@@ -15,7 +11,7 @@ import base64
 
 load_dotenv()
 
-perplexity_api_key = os.getenv("PERPLEXITY_API_KEY")
+openai_api_key = os.getenv("OPENAI_API_KEY")
 ai_fixed_code_list = []
 ai_fixed_code = ""
 
@@ -86,4 +82,4 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(host='localhost', port=5000, debug=True, threaded=True)
+    app.run(host='localhost', port=5000, debug=True, threiiiikiiaded=True)

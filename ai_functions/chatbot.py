@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from langchain_anthropic import ChatAnthropic
+from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, MessagesState, StateGraph
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -12,7 +12,7 @@ from typing_extensions import Annotated, TypedDict
 def create_chatbot(query: str, context: str) -> Dict[str, Any]:
     load_dotenv()
 
-    model = ChatAnthropic(model="claude-3-5-sonnet-20240620")
+    model = ChatOpenAI(model="gpt-4o-mini")
 
     class State(TypedDict):
         messages: Annotated[Sequence[BaseMessage], add_messages]
