@@ -1,14 +1,14 @@
 
 import os
 from dotenv import load_dotenv
-from anthropic import Anthropic
+from openai import OpenAI
 
 
 load_dotenv()
 
 
 def analyze_code_anthropic(code_content, linter_output, language):
-    client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     prompt = f"""\
 As a {language} expert, fix the following code based on the linter output:
@@ -26,8 +26,8 @@ Linter Output:
 Provide only the corrected code:"""
 
     try:
-        response = client.messages.create(
-            model="claude-3-sonnet-20240229",
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
             max_tokens=3000,
             messages=[{"role": "user", "content": prompt}],
         )
