@@ -58,6 +58,26 @@ def is_valid_signature(signature: str, payload: bytes, secret: str) -> bool:
         return False
 
 
+def get_installation_access_token(owner: str, repo: str) -> str:
+    """
+    Get an installation access token for a specific repository.
+
+    Args:
+        owner: Repository owner
+        repo: Repository name
+
+    Returns:
+        str: Installation access token
+    """
+    try:
+        installation = git_integration.get_installation(owner, repo)
+        access_token = git_integration.get_access_token(installation.id)
+        return access_token.token
+    except Exception as e:
+        logger.error(f"Error getting installation token: {str(e)}")
+        raise
+
+
 def create_app() -> Flask:
     """
     Create and configure the Flask application.
@@ -100,7 +120,13 @@ def create_app() -> Flask:
                 and "pull_request" in payload["issue"]
             ):
                 logger.info("Handling new comment")
-                return handle_new_comment(payload)
+                # Get repository details from payload
+                repo_full_name = payload["repository"]["full_name"]
+                owner, repo = repo_full_name.split("/")
+                # Get installation token
+                installation_token = get_installation_access_token(owner, repo)
+                # Pass the installation token instead of static GITHUB_TOKEN
+                return handle_new_comment(payload, installation_token)
             else:
                 logger.info("Received unhandled webhook event")
             return "ok"
