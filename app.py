@@ -12,21 +12,14 @@ import base64
 load_dotenv()
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
-
 app_id = os.getenv("APP_ID")
-
 github_private_key_base64 = os.environ.get("PRIVATE_KEY_BASE64")
 github_private_key = base64.b64decode(github_private_key_base64).decode("utf-8")
 app_key = github_private_key
-git_integration = GithubIntegration(
-    app_id,
-    app_key,
-)
-
+git_integration = GithubIntegration(app_id, app_key,)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 def is_valid_signature(signature: str, payload: bytes, secret: str) -> bool:
     """
@@ -57,6 +50,24 @@ def is_valid_signature(signature: str, payload: bytes, secret: str) -> bool:
         logger.error(f"Error validating signature: {str(e)}")
         return False
 
+def get_installation_access_token(owner: str, repo: str) -> str:
+    """
+    Get an installation access token for a specific repository.
+
+    Args:
+        owner: Repository owner
+        repo: Repository name
+
+    Returns:
+        str: Installation access token
+    """
+    try:
+        installation = git_integration.get_installation(owner, repo)
+        access_token = git_integration.get_access_token(installation.id)
+        return access_token.token
+    except Exception as e:
+        logger.error(f"Error getting installation token: {str(e)}")
+        raise
 
 def create_app() -> Flask:
     """
@@ -100,7 +111,10 @@ def create_app() -> Flask:
                 and "pull_request" in payload["issue"]
             ):
                 logger.info("Handling new comment")
-                return handle_new_comment(payload)
+                repo_full_name = payload["repository"]["full_name"]
+                owner, repo = repo_full_name.split("/")
+                installation_token = get_installation_access_token(owner, repo)
+                return handle_new_comment(payload, installation_token)
             else:
                 logger.info("Received unhandled webhook event")
             return "ok"
@@ -110,10 +124,8 @@ def create_app() -> Flask:
 
     return app
 
-
 # Create the app instance
 app = create_app()
-
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, debug=True)
